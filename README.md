@@ -5,6 +5,6 @@ copy the files in linuxrootfs
 
 fuctions:
 
-10% battery - the LED flashes red, rumble three times.
-5% battery - the LED flashes red, rumble three times.
-1% battery - power off.
+- 10% battery - the LED flashes red, rumble three times.
+- 5% battery - the LED flashes red, rumble three times.
+- 1% battery - power off.
