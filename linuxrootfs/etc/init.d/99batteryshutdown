@@ -9,19 +9,35 @@
 # Short-Description: Apagado seguro al 1% de batería
 ### END INIT INFO
 
-red_on() { echo 1 > /sys/class/power_supply/axp2202-battery/led_test; }
-red_off() { echo 0 > /sys/class/power_supply/axp2202-battery/led_test; }
+red_flash_on() { echo 1 > /sys/class/power_supply/axp2202-battery/led_test; }
+red_flash_off() { echo 0 > /sys/class/power_supply/axp2202-battery/led_test; }
+red_on() { echo 1 > /sys/class/power_supply/axp2202-battery/lowpwr_led; }
+red_off() { echo 0 > /sys/class/power_supply/axp2202-battery/lowpwr_led; }
 green_on() { echo 1 > /sys/class/power_supply/axp2202-battery/work_led; }
 green_off() { echo 0 > /sys/class/power_supply/axp2202-battery/work_led; }
+
+task_killer() {
+    signal=$1
+    for pid in $(ps -eo pid,args --no-headers | grep '^ *[0-9]* /mnt/[^ ]*' | awk '{print $1}'); do
+        kill -$signal $pid 2>/dev/null
+    done
+}
+
+kill_all_processes() {
+    task_killer SIGTERM
+    sleep 2
+    task_killer SIGKILL
+}
 
 monitor_battery() {
     while true; do
         capacity=$(cat /sys/class/power_supply/axp2202-battery/capacity 2>/dev/null)
         status=$(cat /sys/class/power_supply/axp2202-battery/status 2>/dev/null)
-        
+
         if [ "$status" = "Charging" ] && { [ -f /tmp/lowbattery10 ] || [ -f /tmp/lowbattery5 ]; }; then
             rm -f /tmp/lowbattery*
             red_off
+            red_flash_off
             green_on
         elif [ "$capacity" -le 10 ] && [ "$capacity" -gt 5 ] && [ ! -f /tmp/lowbattery10 ] && [ "$status" == "Discharging" ]; then
             logger "Battery is low to 10%"
@@ -29,35 +45,33 @@ monitor_battery() {
             rumble-test && sleep 0.3
             rumble-test
             green_off
+            red_flash_off
             red_on
-            
             touch /tmp/lowbattery10
-        elif [ "$capacity" -le 5 ] && [ "$capacity" -gt 1 ] && [ ! -f /tmp/lowbattery5 ] && [ "$status" == "Discharging" ]; then
+        elif [ "$capacity" -le 5 ] && [ "$capacity" -gt 4 ] && [ ! -f /tmp/lowbattery5 ] && [ "$status" == "Discharging" ]; then
             logger "Battery is low to 5%"
             rumble-test && sleep 0.3
             rumble-test && sleep 0.3
             rumble-test
             green_off
-            red_on
-            
+            red_off
+            red_flash_on
             touch /tmp/lowbattery5
-        elif [ "$capacity" -le 1 ] && [ "$status" == "Discharging" ]; then
+        elif [ "$capacity" -le 4 ] && [ "$status" == "Discharging" ]; then
             logger "Battery at 1% - Initiating safe shutdown protocol"
             rumble-test && sleep 0.3
             rumble-test && sleep 0.3
             rumble-test
-            
-            pkill -9 retroarch
-            pkill -9 retroarch32
-            
+            # close apps in sdcard not system partition
+            kill_all_processes
             # Disable swap
             swapoff -a
-            
             # Unmount non-essential partitions
             umount -a -t ext4,vfat,loop -l >/dev/null 2>&1
-            
+            sync
             # shutdown the system
-            shutdown -h now
+            #/usr/sbin/poweroff -h
+            echo 0 > /proc/sysrq-trigger
             exit 0
         fi
         sleep 30
