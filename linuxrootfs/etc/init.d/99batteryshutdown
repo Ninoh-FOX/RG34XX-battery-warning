@@ -69,9 +69,11 @@ monitor_battery() {
             # Unmount non-essential partitions
             umount -a -t ext4,vfat,loop -l >/dev/null 2>&1
             sync
-            # shutdown the system
-            #/usr/sbin/poweroff -h
-            echo o > /proc/sysrq-trigger
+            # shutdown the system way kernel
+            echo s > /proc/sysrq-trigger   # sync
+            echo e > /proc/sysrq-trigger   # SIGTERM
+            echo i > /proc/sysrq-trigger   # SIGKILL
+            echo o > /proc/sysrq-trigger   # Power Off
             exit 0
         fi
         sleep 30
