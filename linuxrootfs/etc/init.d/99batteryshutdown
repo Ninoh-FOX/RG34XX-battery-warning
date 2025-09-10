@@ -48,7 +48,7 @@ monitor_battery() {
             red_flash_off
             red_on
             touch /tmp/lowbattery10
-        elif [ "$capacity" -le 5 ] && [ "$capacity" -gt 4 ] && [ ! -f /tmp/lowbattery5 ] && [ "$status" == "Discharging" ]; then
+        elif [ "$capacity" -le 5 ] && [ "$capacity" -gt 1 ] && [ ! -f /tmp/lowbattery5 ] && [ "$status" == "Discharging" ]; then
             logger "Battery is low to 5%"
             rumble-test && sleep 0.3
             rumble-test && sleep 0.3
@@ -57,7 +57,7 @@ monitor_battery() {
             red_off
             red_flash_on
             touch /tmp/lowbattery5
-        elif [ "$capacity" -le 4 ] && [ "$status" == "Discharging" ]; then
+        elif [ "$capacity" -le 1 ] && [ "$status" == "Discharging" ]; then
             logger "Battery at 1% - Initiating safe shutdown protocol"
             rumble-test && sleep 0.3
             rumble-test && sleep 0.3
