@@ -71,7 +71,7 @@ monitor_battery() {
             sync
             # shutdown the system
             #/usr/sbin/poweroff -h
-            echo 0 > /proc/sysrq-trigger
+            echo o > /proc/sysrq-trigger
             exit 0
         fi
         sleep 30
